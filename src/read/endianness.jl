@@ -26,3 +26,10 @@ function bswap_needed(s::IO)
         return true
     end
 end
+
+
+function bswap_needed(s::String)
+    open(s) do file
+        return bswap_needed(file)
+    end
+end

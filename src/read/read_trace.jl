@@ -7,16 +7,16 @@ Use:    read_trace!(s::IO,
                     headers::AbstractArray{BinaryTraceHeader,1},
                     data::AbstractArray{<:Union{IBMFloat32, Float32}, 2},
                     trace::Int, 
-                    th_byte2sample::Dict{String,Int32})
+                    th_byte2sample::Dict{String,Int32}, bigendian::Bool = bswap_needed(s))
 
 Reads 'trace' from the current position of stream 's' into 'headers' and
 'data'. 
 """
 function read_traces!(s::IO, headers::AbstractVector{BinaryTraceHeader},
                       data::AbstractMatrix{<:Union{IBMFloat32, Float32}},
-                      th_byte2sample::Dict{String,Int32})
+                      th_byte2sample::Dict{String,Int32}, bigendian::Bool = bswap_needed(s))
 
-    return read_traces!(s, headers, data, collect(keys(th_byte2sample)), th_byte2sample)
+    return read_traces!(s, headers, data, collect(keys(th_byte2sample)), th_byte2sample, bigendian)
 end
 
 """
@@ -27,14 +27,15 @@ Use:    read_trace!(s::IO,
                     data::AbstractArray{<:Union{IBMFloat32, Float32}, 2},
                     trace::Int,
                     keys::Array{String,1},
-                    th_byte2sample::Dict{String,Int32})
+                    th_byte2sample::Dict{String,Int32}, 
+                    bigendian::Bool = bswap_needed(s))
 
 Reads 'trace' from the current position of stream 's' into 'headers' and
 'data'. Only the header values in 'keys' and read.
 """
 function read_traces!(s::IO, headers::AbstractVector{BinaryTraceHeader},
                       data::AbstractMatrix{DT}, keys::Array{String,1},
-                      th_byte2sample::Dict{String,Int32}) where {DT<:Union{IBMFloat32, Float32}}
+                      th_byte2sample::Dict{String,Int32}, bigendian::Bool = bswap_needed(s)) where {DT<:Union{IBMFloat32, Float32}}
 
     ntrace = size(data, 2)
     ntrace == 0 && return
@@ -47,6 +48,7 @@ function read_traces!(s::IO, headers::AbstractVector{BinaryTraceHeader},
         read!(s, view(data, :, trace_loc+1))
     end
     map!(swp, data, data)
+    bigendian && (data = bswap.(data))
     nothing
 end
 
